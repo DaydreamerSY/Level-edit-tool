@@ -143,7 +143,7 @@ def _update_level_index():
                         if not index == INDEX_SELECTED:
                             LEVEL_EDIT[r][c] = LEVEL_N_WORDS[index][i]
                         else:
-                            LEVEL_EDIT[r][c] = f"\033[38;5;{196}m{LEVEL_N_WORDS[index][i]}\033[0;0m"
+                            LEVEL_EDIT[r][c] = f"\033[38;5;{196}m{bcolors.BOLD}{LEVEL_N_WORDS[index][i]}\033[0;0m"
 
                         is_set = True
                         break
@@ -165,14 +165,14 @@ def _print_level_edit():
         print()
 
     # get word's index
-    print("\t\tWord\tIndex")
-    print("\t\t------------")
+    print("\t\t\t\tWord\tIndex")
+    print("\t\t\t\t------------")
     for i in range(len(LEVEL_N_WORDS)):
         if i == INDEX_SELECTED:
-            print(f"\t\t{LEVEL_N_WORDS[i]}\t{i + 1}\t(selected)")
+            print(f"\t\t\t\t\033[38;5;{196}m{bcolors.UNDERLINE}{LEVEL_N_WORDS[i]}\t{i + 1}\033[0;0m")
         else:
-            print(f"\t\t{LEVEL_N_WORDS[i]}\t{i + 1}")
-        print("\t\t------------")
+            print(f"\t\t\t\t{LEVEL_N_WORDS[i]}\t{i + 1}")
+        print("\t\t\t\t------------")
 
 
 def _print_current_mode():
@@ -184,8 +184,8 @@ def _print_how_to_use():
     Tip:
     In Edit mode:
         ↑→↓←\tMove
-        Q, E\tRotate horizontal, vertical
-        A, D\tSelect previous, next word
+        R\tRotate horizontal, vertical
+        W, S\tSelect previous, next word
         ESC\tDeselected word
         TAB\tHold Tab to show index of words
 
@@ -218,6 +218,21 @@ def _move_up(word_index):
     for coor in INDEX_STORE[word_index]:
         coor["r"] -= 1
 
+def _rotate(word_index):
+
+    first_coor = INDEX_STORE[word_index][0]
+    second_coor = INDEX_STORE[word_index][1]
+
+    if second_coor["r"] == first_coor["r"] + 1:
+        print("Word in vertical")
+        _rotate_horizontal(word_index)
+        return
+
+    if second_coor["c"] == first_coor["c"] + 1:
+        print("Word in horizontal")
+        _rotate_vertical(word_index)
+        return
+
 
 def _rotate_vertical(word_index):
     global INDEX_STORE
@@ -245,7 +260,7 @@ def _rotate_horizontal(word_index):
 
 def _next_word():
     global INDEX_SELECTED
-    if INDEX_SELECTED + 1 <= len(LIST_WORDS):
+    if INDEX_SELECTED + 1 < len(LEVEL_N_WORDS):
         INDEX_SELECTED += 1
 
 
@@ -394,6 +409,7 @@ def _print_me_that_shit():
     _update_level_index()
     _print_level_edit()
     _print_how_to_use()
+    _print_current_mode()
 
 
 # control funct
@@ -419,14 +435,7 @@ def on_press(key):
             _move_down(INDEX_SELECTED)
             _print_me_that_shit()
 
-        if key.char == 'a':
-            # print("rotate vertical")
-            _rotate_vertical(INDEX_SELECTED)
-            _print_me_that_shit()
-        if key.char == 'd':
-            # print("rotate horizontal")
-            _rotate_horizontal(INDEX_SELECTED)
-            _print_me_that_shit()
+
 
         if key.char == 'w':
             # print("prev word")
@@ -435,6 +444,10 @@ def on_press(key):
         if key.char == 's':
             # print("next word")
             _next_word()
+            _print_me_that_shit()
+
+        if key.char == 'r':
+            _rotate(INDEX_SELECTED)
             _print_me_that_shit()
 
     except AttributeError:
@@ -456,7 +469,7 @@ def on_release(key):
 def _refine_input(str):
     # '\x1b[B\x1b[C\x1b[A\x1b[D\x1b[B\x1b[D\x1b[C\x1b[A\x1b[B\x1b[C\x1b[A\x1b[C\x1b[C\x1b[C\x1b[B\x1b[D\x1b[C\x1b[A\x1b[D\x1b[C\x1b[B\x1b[Cqeeqeqe\x1b2'
     black_list = ["\x1b", "[B", "[A", "[C",
-                  "[D", "a", "d", "w", "s", "\t", "\n", "\s"]
+                  "[D", "a", "d", "w", "s", "q", "e", "r", "\t", "\n", "\s"]
     for bl in black_list:
         str = str.replace(bl, "")
         if str in ["save", "quit"]:
@@ -480,6 +493,7 @@ if __name__ == "__main__":
                     is_quit = True
                     break
                 SELECTED_LEVEL = int(_temp_input)
+                SELECTED_LEVEL -= 1 # convert level 1 in input to level 0 in data, bc level start at index 0
                 break
             except:
                 print(repr(_temp_input))
@@ -514,9 +528,9 @@ if __name__ == "__main__":
                 if not is_move_on:
                     break
 
+                CURRENT_MODE = "EDIT MODE"
                 _print_me_that_shit()
 
-                CURRENT_MODE = "EDIT MODE"
 
                 with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
                     listener.join()
