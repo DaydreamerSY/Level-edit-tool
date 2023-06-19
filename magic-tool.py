@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from pynput import keyboard
 import colorama
+from termcolor import colored
 
 colorama.init(autoreset=True)
 
@@ -22,8 +23,12 @@ LEVEL_EDIT_SIZE = 25
 
 SELECTED_LEVEL = ""
 INDEX_SELECTED = ""
+HOTSWAP_KEY = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
 CURRENT_MODE = "SELECT MODE"
+
+# '\x1b[B\x1b[C\x1b[A\x1b[D\x1b[B\x1b[D\x1b[C\x1b[A\x1b[B\x1b[C\x1b[A\x1b[C\x1b[C\x1b[C\x1b[B\x1b[D\x1b[C\x1b[A\x1b[D\x1b[C\x1b[B\x1b[Cqeeqeqe\x1b2'
+BLACK_LIST = ["\x1b", "[B", "[A", "[C", "[D", "\t", "\n", "\s", "a", "d", "w", "s", "q", "e", "r"]
 
 
 class bcolors:
@@ -36,7 +41,7 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-    RED = '\033[2;31;43m'
+    RED = '\033[38;5;196m'
 
 
 def _load_database():
@@ -137,17 +142,17 @@ def _update_level_index():
             is_set = False  # check if set Letter for cell
 
             for index in INDEX_STORE:
-                i = 0  # index of letter in word
+                i = 0  # index of a letter in word
                 for coor in INDEX_STORE[index]:
                     if r == coor["r"] and c == coor["c"]:
                         if not index == INDEX_SELECTED:
-                            LEVEL_EDIT[r][c] = LEVEL_N_WORDS[index][i]
+                            LEVEL_EDIT[r][c] = f"{colored(LEVEL_N_WORDS[index][i], 'cyan', attrs=['bold'])}"
                         else:
-                            LEVEL_EDIT[r][c] = f"\033[38;5;{196}m{bcolors.BOLD}{LEVEL_N_WORDS[index][i]}\033[0;0m"
+                            LEVEL_EDIT[r][c] = f"{colored(LEVEL_N_WORDS[index][i], 'red', attrs=['bold'])}"
 
                         is_set = True
                         break
-                    i += 1  # move to next letter
+                    i += 1  # move to a next letter
 
             if not is_set:
                 LEVEL_EDIT[r][c] = " "
@@ -155,8 +160,12 @@ def _update_level_index():
 
 # print level_edit
 def _print_level_edit():
+    print("\n\t\t", end="")
+    print(" ".join(["~"] + [str(i % 10) for i in range(LEVEL_EDIT_SIZE)]))
+    row_count = 0
     for r in LEVEL_EDIT:
-        print("\t\t", end="")
+        print(f"\t\t{row_count % 10}", end=" ")
+        row_count += 1
         for c in r:
             if c == " ":
                 print("-", end=" ")
@@ -164,34 +173,45 @@ def _print_level_edit():
                 print(c, end=" ")
         print()
 
+    # table = PrettyTable()
+    # table.field_names = [f"{i:02d}" for i in range(LEVEL_EDIT_SIZE)]
+    # table.add_rows(LEVEL_EDIT)
+    # table.hrules = ALL
+    # print(table)
+
     # get word's index
-    print("\t\t\t\tWord\tIndex")
+    print(f"\t\t\t\tWord\tIndex\t{','.join(LEVEL_N_WORDS[-1])}")
     print("\t\t\t\t------------")
     for i in range(len(LEVEL_N_WORDS)):
         if i == INDEX_SELECTED:
-            print(f"\t\t\t\t\033[38;5;{196}m{bcolors.UNDERLINE}{LEVEL_N_WORDS[i]}\t{i + 1}\033[0;0m")
+            # print(f"\t\t\t\t{bcolors.RED}{bcolors.UNDERLINE}{LEVEL_N_WORDS[i]}\t{i + 1}{bcolors.ENDC}")
+            print(f"\t\t\t\t{colored(LEVEL_N_WORDS[i], 'red')}\t{i + 1}")
         else:
             print(f"\t\t\t\t{LEVEL_N_WORDS[i]}\t{i + 1}")
         print("\t\t\t\t------------")
 
 
 def _print_current_mode():
-    print(f"You are in {CURRENT_MODE}\n")
+    if CURRENT_MODE == "SELECT MODE":
+        print(f"You are in {colored('SELECT MODE', 'yellow')}")
+    if CURRENT_MODE == "EDIT MODE":
+        print(f"You are in {colored('EDIT MODE', 'red')}\n")
 
 
 def _print_how_to_use():
-    print("""
+    print(f"""
     Tip:
-    In Edit mode:
+    In {colored('Edit', 'red')} mode:
         ↑→↓←\tMove
+        WASD\tMove
         R\tRotate horizontal, vertical
-        W, S\tSelect previous, next word
+        Q, E\tSelect previous, next word
         ESC\tDeselected word
         TAB\tHold Tab to show index of words
 
-    In Select mode:
-        save\tType 'save' to save and back to Level select
-        quit\tType 'quit' to exit and discard changes
+    In {colored('Select', 'yellow')} mode:
+        save\tSave and back to Level select
+        quit\tDiscard changes and back to Level select
     """)
 
 
@@ -217,6 +237,7 @@ def _move_up(word_index):
     global INDEX_STORE
     for coor in INDEX_STORE[word_index]:
         coor["r"] -= 1
+
 
 def _rotate(word_index):
 
@@ -414,41 +435,60 @@ def _print_me_that_shit():
 
 # control funct
 def on_press(key):
+    global INDEX_SELECTED
     try:
         # print('alphanumeric key {0} pressed'.format(
         #     key.char))
 
-        if key == keyboard.Key.right:
-            # print("move right")
-            _move_right(INDEX_SELECTED)
+        if key.char in HOTSWAP_KEY:
+            INDEX_SELECTED = int(key.char) - 1
             _print_me_that_shit()
-        if key == keyboard.Key.left:
-            # print("move left")
-            _move_left(INDEX_SELECTED)
-            _print_me_that_shit()
-        if key == keyboard.Key.up:
+
+        # if key == keyboard.Key.right:
+        #     # print("move right")
+        #     _move_right(INDEX_SELECTED)
+        #     _print_me_that_shit()
+        # if key == keyboard.Key.left:
+        #     # print("move left")
+        #     _move_left(INDEX_SELECTED)
+        #     _print_me_that_shit()
+        # if key == keyboard.Key.up:
+        #     # print("move up")
+        #     _move_up(INDEX_SELECTED)
+        #     _print_me_that_shit()
+        # if key == keyboard.Key.down:
+        #     # print("move down")
+        #     _move_down(INDEX_SELECTED)
+        #     _print_me_that_shit()
+
+        if key.char == 'w':
             # print("move up")
             _move_up(INDEX_SELECTED)
             _print_me_that_shit()
-        if key == keyboard.Key.down:
-            # print("move down")
+        if key.char == 'a':
+            # print("move up")
+            _move_left(INDEX_SELECTED)
+            _print_me_that_shit()
+        if key.char == 's':
+            # print("move up")
             _move_down(INDEX_SELECTED)
             _print_me_that_shit()
-
-
-
-        if key.char == 'w':
+        if key.char == 'd':
+            # print("move up")
+            _move_right(INDEX_SELECTED)
+            _print_me_that_shit()
+        if key.char == 'q':
             # print("prev word")
             _prev_word()
             _print_me_that_shit()
-        if key.char == 's':
+        if key.char == 'e':
             # print("next word")
             _next_word()
             _print_me_that_shit()
-
         if key.char == 'r':
             _rotate(INDEX_SELECTED)
             _print_me_that_shit()
+            
 
     except AttributeError:
         # print('special key {0} pressed'.format(
@@ -462,17 +502,13 @@ def on_release(key):
     if key == keyboard.Key.esc:
         # stop listening event
         _print_me_that_shit()
-        keyboard.Listener.stop()
-        # return False
+        return False
 
 
 def _refine_input(str):
-    # '\x1b[B\x1b[C\x1b[A\x1b[D\x1b[B\x1b[D\x1b[C\x1b[A\x1b[B\x1b[C\x1b[A\x1b[C\x1b[C\x1b[C\x1b[B\x1b[D\x1b[C\x1b[A\x1b[D\x1b[C\x1b[B\x1b[Cqeeqeqe\x1b2'
-    black_list = ["\x1b", "[B", "[A", "[C",
-                  "[D", "a", "d", "w", "s", "q", "e", "r", "\t", "\n", "\s"]
-    for bl in black_list:
+    for bl in BLACK_LIST:
         str = str.replace(bl, "")
-        if str in ["save", "quit"]:
+        if str in ["save", "quit", "backup", "restore"]:
             return str
     return str
 
@@ -483,7 +519,7 @@ def _refine_input(str):
 
 if __name__ == "__main__":
     cls()
-    global CURRENT_MOD
+    # global CURRENT_MODE
     while True:
         is_quit = False
         while True:
@@ -493,7 +529,8 @@ if __name__ == "__main__":
                     is_quit = True
                     break
                 SELECTED_LEVEL = int(_temp_input)
-                SELECTED_LEVEL -= 1 # convert level 1 in input to level 0 in data, bc level start at index 0
+                # convert level 1 in input to level 0 in data, bc level start at index 0
+                SELECTED_LEVEL -= 1
                 break
             except:
                 print(repr(_temp_input))
@@ -531,14 +568,16 @@ if __name__ == "__main__":
                 CURRENT_MODE = "EDIT MODE"
                 _print_me_that_shit()
 
-
                 with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
                     listener.join()
                     listener.stop()
+                # while True:
+                #     if not on_press():
+                #         break
 
                 INDEX_SELECTED = -2
 
-                CURRENT_MOD = "SELECT MODE"
+                CURRENT_MODE = "SELECT MODE"
 
                 # a = input("Saved, press Enter to continous")
 
