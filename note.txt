@@ -1,0 +1,17 @@
+if AR5<A05 or AR5 == AO5:
+    return 0
+else:
+    if AR5 < AP5 + AO5 and AR5>AP5:
+        return 1
+    else:
+        return 2
+
+=============================
+
+if _random_thing < _chance_0_star or _random_thing == _chance_0_star:
+    return 0
+else:
+    if _random_thing < _chance_1_star + _chance_0_star and _random_thing > _chance_0_star:
+        return 1
+    else:
+        return 2
