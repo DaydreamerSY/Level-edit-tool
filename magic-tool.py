@@ -63,8 +63,7 @@ def _load_level(selected_level):
     SIZE_W = level_n["h"]
     SIZE_H = level_n["w"]
     BOARD = level_n["b"]
-    LEVEL_N_WORDS = [i.upper()
-                     for i in LIST_WORDS[selected_level].split(" - ")]
+    LEVEL_N_WORDS = [i.upper() for i in LIST_WORDS[selected_level].split(" - ")]
 
 
 def _prepare_index_store():
