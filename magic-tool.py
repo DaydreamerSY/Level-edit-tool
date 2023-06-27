@@ -27,6 +27,9 @@ HOTSWAP_KEY = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
 CURRENT_MODE = "SELECT MODE"
 
+PATH_CHAPTER_FINAL = "/Users/locnq/Desktop/Git/word_timber/Assets/Resources/LevelsData/Final/chapter0.json"
+PATH_CHAPTER_TEST = "/Users/locnq/Desktop/Git/word_timber/Assets/Resources/LevelsData/Test/chapter0.json"
+
 # '\x1b[B\x1b[C\x1b[A\x1b[D\x1b[B\x1b[D\x1b[C\x1b[A\x1b[B\x1b[C\x1b[A\x1b[C\x1b[C\x1b[C\x1b[B\x1b[D\x1b[C\x1b[A\x1b[D\x1b[C\x1b[B\x1b[Cqeeqeqe\x1b2'
 BLACK_LIST = ["\x1b", "[B", "[A", "[C", "[D", "\t", "\n", "\s", "a", "d", "w", "s", "q", "e", "r"]
 
@@ -47,12 +50,12 @@ class bcolors:
 def _load_database():
     global DATA_BOARD, LIST_LEVEL, LIST_WORDS
 
-    path = "/Users/locnq/Desktop/Git/word_timber/Assets/Resources/LevelsData/Final/chapter0.json"
+    # path = "/Users/locnq/Desktop/Git/word_timber/Assets/Resources/LevelsData/Final/chapter0.json"
 
-    DATA_BOARD = json.load(open(path, "r"))
+    DATA_BOARD = json.load(open(PATH_CHAPTER_FINAL, "r"))
     LIST_LEVEL = DATA_BOARD["ListLevelsInChapter"]
 
-    data_words = pd.read_csv("words1.0.26.csv")
+    data_words = pd.read_csv("/Users/locnq/Desktop/Git/word_timber/Assets/Resources/words1.0.26.csv")
     LIST_WORDS = data_words["normal words"].to_list()
 
 
@@ -522,12 +525,24 @@ if __name__ == "__main__":
     # global CURRENT_MODE
     while True:
         is_quit = False
+        is_test2final = False
+        is_final2test = False
         while True:
             try:
                 _temp_input = input("\n Input level you want to change: ")
+
                 if _temp_input == "quit":
                     is_quit = True
                     break
+
+                if _temp_input == "test2final":
+                    is_test2final = True
+                    break
+
+                if _temp_input == "final2test":
+                    is_final2test = True
+                    break
+                
                 SELECTED_LEVEL = int(_temp_input)
                 # convert level 1 in input to level 0 in data, bc level start at index 0
                 SELECTED_LEVEL -= 1
@@ -537,6 +552,17 @@ if __name__ == "__main__":
                 continue
 
         if is_quit:
+            break
+
+        if is_final2test:
+            # confirm = input("Are you sure to copy from Final to Test? (Y/n)")
+            # os.system(f'cp {PATH_CHAPTER_FINAL} {PATH_CHAPTER_TEST}')
+
+            break
+
+        if is_test2final:
+            # confirm = input("Are you sure to copy from Test to Final? (Y/n)")
+            # os.system(f'cp {PATH_CHAPTER_TEST} {PATH_CHAPTER_FINAL}') 
             break
 
         _give_me_that_shit(SELECTED_LEVEL)
